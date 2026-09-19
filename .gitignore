@@ -13,10 +13,6 @@ venv/
 # (排名依據)都已抽取到 results/ 底下的 json,那些才是論文引用的資料。
 runs/
 
-# datasets/ 是 Roboflow 匯出的 937 張圖片(見 datasets/README.roboflow.txt
-# 的下載連結,CC BY 4.0),可重新下載,不需要進版控。
-datasets/
-
 # 預訓練權重,可由 ultralytics 重新下載
 weights/
 yolov8n.pt

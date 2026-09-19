@@ -28,11 +28,10 @@ LLM 讀取 YOLOv8n 訓練動態,診斷後提出下一輪超參數建議,迭代 1
 4. LLM 金鑰設定:
    - Claude 系列:設定環境變數 `ANTHROPIC_API_KEY`
    - Qwen3-14B:本機跑 Ollama(`ollama pull qwen3:14b`),見 `src/llm_agent.py`
-5. 資料集下載:`datasets/`、`runs/`、`weights/`、`yolov8n.pt` 已加進 `.gitignore`(體積大且可重新取得,不進版控)。
-   資料集(937 張圖片,YOLOv8 格式,CC BY 4.0)從 Roboflow Universe 下載後解壓到 `datasets/`,
-   維持 `train/valid/test` 三個子資料夾與 `data.yaml`:
-   https://universe.roboflow.com/traffic-light-for-yolo/mix-dataset-9hfip
-   （細節見 `datasets/README.roboflow.txt`)。下載完成後在 `config/settings.yaml` 填相對路徑,不要寫死絕對路徑。
+5. 資料集:`datasets/` 已隨 repo 一起進版控(937 張圖片,YOLOv8 格式,來源見
+   `datasets/README.roboflow.txt`:https://universe.roboflow.com/traffic-light-for-yolo/mix-dataset-9hfip ,
+   CC BY 4.0),clone 下來就有,不用另外下載。`config/settings.yaml` 裡的路徑維持相對路徑,不要寫死絕對路徑。
+   `runs/`、`weights/`、`yolov8n.pt` 仍不進版控(體積大且可重新產生/下載,見下方「資料夾結構」)。
    預訓練權重(`yolov8n.pt`)會在第一次執行時由 ultralytics 自動下載。
 
 ## 已知陷阱
@@ -56,8 +55,8 @@ Claude outputs/  收斂曲線圖與最終成績表(PNG,供論文/簡報使用)
 ```
 
 以下資料夾不進版控(見 `.gitignore`),體積大且可重新產生/下載:
-`venv/`(虛擬環境)、`datasets/`(可從上方連結重新下載)、`runs/`(每輪訓練的權重與過程圖,
-可由 `results/*.json` + `src/hpo_loop.py` 重新產生)、`weights/`、`yolov8n.pt`(可重新下載)。
+`venv/`(虛擬環境)、`runs/`(每輪訓練的權重與過程圖,可由 `results/*.json` + `src/hpo_loop.py` 重新產生)、
+`weights/`、`yolov8n.pt`(可重新下載)。`datasets/` 有進版控。
 
 ## 如何執行
 
