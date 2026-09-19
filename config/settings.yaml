@@ -1,0 +1,45 @@
+# 全部使用相對路徑,不要寫死絕對路徑(例如 C:/YOLO_agent_project/...)
+
+dataset:
+  root: "./datasets"   # 937 張新資料集(Roboflow 匯出,train/valid/test 直接在這層底下)
+  splits: ["train", "valid", "test"]
+
+training:
+  model: "yolov8n.pt"
+  epochs: 100
+  # 已鎖定:2026-09 在 RTX PRO 4000 Blackwell 上用 scripts/find_batch_size.py
+  # (AutoBatch, 60% GPU 記憶體使用率目標)實測跑出 49,往下取整為 48
+  # (16的倍數,效率損失可忽略,留一點VRAM餘裕),見 docs/decisions.md。
+  # 之後所有實驗都固定用這個值,不要再自動判定。
+  batch_size: 48
+  imgsz: 640
+  optimizer: "AdamW"    # 明確指定,不要用 'auto'
+  pretrained: true       # 明確傳入,不依賴預設
+  workers: 4             # 保守設定,實驗室機器系統RAM只有16GB,避免multiprocessing把記憶體壓滿
+
+hpo:
+  # 2026-09-19 曾短暫改成 11,把 8 個主線 LLM 條件 + 2 個 budget-aware 條件
+  # 各自多跑 1 輪(round10),補上原本 10 輪迴圈裡 LLM 在 round9 結束後提出、
+  # 卻從未被訓練驗證的最後一個提案(詳見 docs/decisions.md「round11 補跑」
+  # 一列)。全部 10 個實驗都已補跑完成,round10 沒有一個超過原本的歷史最佳,
+  # 9 組排名表維持不變,已改回 10,之後的正式輪數預算就是這個值。
+  num_rounds: 10
+  seeds: [0, 1, 2, 3, 4]   # 5-seed 驗證用(2026-09 從 3-seed 擴充,見 docs/decisions.md「5-seed 擴充」)
+
+baseline:
+  # 2026-09 novice baseline,5-seed(seed=0,1,2,3,4)。取代第三次重跑的
+  # 3-seed 版(0.6214±0.0095):3-seed 時發現 seed1 明顯偏低,檢查過不是
+  # bug(訓練完整、loss全面偏高、落差集中在樣本數最少的 yellow light 類別,
+  # 屬於真實訓練變異),但 n=3 對變異數的估計太不穩定,單一極端值影響力
+  # 過大,擴充到 5 個 seed 稀釋這個影響,見 docs/decisions.md「5-seed 擴充」。
+  map5095_mean: 0.6198
+  map5095_std: 0.0110
+  noise_threshold: 0.0219
+  weakest_class: "yellow light"   # 5 個 seed 排序完全一致,確認穩定
+
+llm:
+  models:
+    - "claude-haiku-4.5"
+    - "claude-sonnet-5"
+    - "claude-opus-5"
+    - "qwen3-14b"   # 本機 Ollama,通用推理模型(非程式碼特化),見 docs/decisions.md

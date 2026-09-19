@@ -1,0 +1,159 @@
+{
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "per_seed_results": [
+    {
+      "results_csv": "runs\\detect\\baseline_3seed_seed0\\results.csv",
+      "args_yaml": "runs\\detect\\baseline_3seed_seed0\\args.yaml",
+      "best_map5095": 0.62692,
+      "class_stats": {
+        "green light": {
+          "ap50": 0.9274092878134675,
+          "ap5095": 0.6484694699083208,
+          "precision": 0.9332965618638162,
+          "recall": 0.8985562982344332,
+          "n": 109
+        },
+        "red light": {
+          "ap50": 0.9545859098030315,
+          "ap5095": 0.6988193878817722,
+          "precision": 0.874841167317288,
+          "recall": 0.928,
+          "n": 125
+        },
+        "yellow light": {
+          "ap50": 0.9358372767084854,
+          "ap5095": 0.5225389015533071,
+          "precision": 0.9334809985774708,
+          "recall": 0.8771226878844753,
+          "n": 48
+        }
+      },
+      "seed": 0
+    },
+    {
+      "results_csv": "runs\\detect\\baseline_3seed_seed1\\results.csv",
+      "args_yaml": "runs\\detect\\baseline_3seed_seed1\\args.yaml",
+      "best_map5095": 0.61038,
+      "class_stats": {
+        "green light": {
+          "ap50": 0.9417267907558687,
+          "ap5095": 0.6532401293427603,
+          "precision": 0.8927863102741711,
+          "recall": 0.8807339449541285,
+          "n": 109
+        },
+        "red light": {
+          "ap50": 0.9617817601647903,
+          "ap5095": 0.7020168517517364,
+          "precision": 0.909575133254326,
+          "recall": 0.928,
+          "n": 125
+        },
+        "yellow light": {
+          "ap50": 0.8707481820946483,
+          "ap5095": 0.47188409729811076,
+          "precision": 0.8862689346729401,
+          "recall": 0.6494732171245028,
+          "n": 48
+        }
+      },
+      "seed": 1
+    },
+    {
+      "results_csv": "runs\\detect\\baseline_3seed_seed2\\results.csv",
+      "args_yaml": "runs\\detect\\baseline_3seed_seed2\\args.yaml",
+      "best_map5095": 0.6269,
+      "class_stats": {
+        "green light": {
+          "ap50": 0.9369408955566911,
+          "ap5095": 0.6754253654648148,
+          "precision": 0.913614496104338,
+          "recall": 0.8990825688073395,
+          "n": 109
+        },
+        "red light": {
+          "ap50": 0.9628669035089085,
+          "ap5095": 0.7042852213144316,
+          "precision": 0.9112192303143758,
+          "recall": 0.944,
+          "n": 125
+        },
+        "yellow light": {
+          "ap50": 0.9138153753424653,
+          "ap5095": 0.4885473267860484,
+          "precision": 0.9370271870339052,
+          "recall": 0.7916666666666666,
+          "n": 48
+        }
+      },
+      "seed": 2
+    },
+    {
+      "results_csv": "runs\\detect\\baseline_3seed_seed3\\results.csv",
+      "args_yaml": "runs\\detect\\baseline_3seed_seed3\\args.yaml",
+      "best_map5095": 0.60568,
+      "class_stats": {
+        "green light": {
+          "ap50": 0.9253899176912768,
+          "ap5095": 0.6579061713448315,
+          "precision": 0.9049809092000596,
+          "recall": 0.8737958893547372,
+          "n": 109
+        },
+        "red light": {
+          "ap50": 0.9556698818858392,
+          "ap5095": 0.6886124883263096,
+          "precision": 0.9161694045638301,
+          "recall": 0.92,
+          "n": 125
+        },
+        "yellow light": {
+          "ap50": 0.9331731454968237,
+          "ap5095": 0.47458794593442877,
+          "precision": 0.9236449498898814,
+          "recall": 0.8958333333333334,
+          "n": 48
+        }
+      },
+      "seed": 3
+    },
+    {
+      "results_csv": "runs\\detect\\baseline_3seed_seed4\\results.csv",
+      "args_yaml": "runs\\detect\\baseline_3seed_seed4\\args.yaml",
+      "best_map5095": 0.62936,
+      "class_stats": {
+        "green light": {
+          "ap50": 0.9452167965575883,
+          "ap5095": 0.6863143977608946,
+          "precision": 0.9074459708532623,
+          "recall": 0.908256880733945,
+          "n": 109
+        },
+        "red light": {
+          "ap50": 0.9626986180291541,
+          "ap5095": 0.6902672215768011,
+          "precision": 0.9068223482463603,
+          "recall": 0.9343004094959344,
+          "n": 125
+        },
+        "yellow light": {
+          "ap50": 0.9332362509726001,
+          "ap5095": 0.5079354294301843,
+          "precision": 0.9126129540550364,
+          "recall": 0.870358410905862,
+          "n": 48
+        }
+      },
+      "seed": 4
+    }
+  ],
+  "map5095_mean": 0.6198480000000001,
+  "map5095_std": 0.010961264525591935,
+  "noise_threshold": 0.02192252905118387
+}

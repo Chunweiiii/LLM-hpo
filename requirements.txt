@@ -1,0 +1,11 @@
+# torch / torchvision 不列在這裡,依 GPU 型號另外安裝(見 README)
+ultralytics>=8.1.0
+anthropic>=0.40.0
+optuna>=3.6.0
+pyyaml>=6.0
+numpy>=1.26
+pandas>=2.2
+scipy>=1.12
+python-dotenv>=1.0
+# 若用 Ollama 跑 Qwen3-14B,改用 requests 呼叫本機 API,不需額外套件
+requests>=2.31

@@ -1,0 +1,248 @@
+{
+  "model_key": "claude-opus-5",
+  "num_rounds": 11,
+  "history": [
+    {
+      "round": 0,
+      "hyperparameters": {
+        "lr0": 0.01,
+        "weight_decay": 0.0005,
+        "mosaic": 1.0,
+        "hsv_v": 0.4,
+        "box": 7.5
+      },
+      "map5095": 0.62692,
+      "llm_reasoning": "Only one data point exists so far: the Ultralytics default configuration (lr0=0.01, wd=0.0005, mosaic=1.0, hsv_v=0.4, box=7.5) scoring 0.6269, which is already slightly above the stated 0.6198 baseline mean and within its noise band. With no diagnostic signal available, the sensible strategy is to start a coarse exploration along the axes that are most likely to matter for this task, moving several parameters by a moderate (not extreme) amount so that a clear score change is observable, while staying close enough to the known-good point that I can attribute the change. Priors I am using: (1) mAP50-95 is dominated by localization precision, so raising the box regression weight from the default 7.5 to ~9.5 directly up-weights the term the metric is most sensitive to; (2) traffic lights are small, high-aspect-ratio objects, and full-strength mosaic (1.0) aggressively downscales objects, which typically hurts small-object localization quality even when it helps mAP50 recall, so reducing mosaic to 0.8 is a reasonable first probe; (3) lr0=0.01 is the SGD-tuned default and is often somewhat hot for a small model on a narrow-domain dataset, so halving it to 0.005 tests whether the run is over-stepping in the final convergence phase; (4) hsv_v is raised modestly from 0.4 to 0.5 because traffic light appearance varies strongly with exposure/day-night conditions, and value jitter is the cheapest robustness gain for emissive objects. Weight decay is deliberately left at the default 0.0005 so that it acts as a fixed control in this first exploratory step — changing regularization at the same time as learning rate would make the result uninterpretable given that I only see a single scalar per run. If this configuration improves the score, the next step will be to push mosaic and box further in the same direction; if it degrades, I will know the combined move was too aggressive and will bisect back toward the default point and vary one axis at a time.",
+      "llm_base_iteration": "Round 1",
+      "llm_base_rationale": "Round 1 is the only completed run and is therefore both the historical best (0.6269) and the sole reference point. All proposed changes are moderate perturbations around it rather than a jump into unexplored territory, so that the resulting score difference remains interpretable with only a scalar signal available.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.005,
+        "weight_decay": 0.0005,
+        "mosaic": 0.8,
+        "hsv_v": 0.5,
+        "box": 9.5
+      }
+    },
+    {
+      "round": 1,
+      "hyperparameters": {
+        "lr0": 0.005,
+        "weight_decay": 0.0005,
+        "mosaic": 0.8,
+        "hsv_v": 0.5,
+        "box": 9.5
+      },
+      "map5095": 0.643,
+      "llm_reasoning": "Only two data points exist, but they define a clear improvement direction. Round 1 (Ultralytics defaults: lr0=0.01, mosaic=1.0, box=7.5) gave 0.6269. Round 2 moved three knobs simultaneously — halved the learning rate (0.01->0.005), reduced mosaic (1.0->0.8), raised hsv_v (0.4->0.5) and raised the box loss gain (7.5->9.5) — and gained +0.0161 mAP50-95 to 0.6430, which is also clearly above the 0.6198 ± 0.0110 baseline band. Since only the aggregate score is available, I cannot attribute the gain to any single knob, so the most efficient strategy with a small budget is to take a second step along the same vector rather than to ablate one knob at a time (an ablation would cost 3-4 runs to recover information I can partially infer from a directional probe). Each of the three moved knobs has a plausible mechanism for helping this task: traffic lights are small, high-aspect-ratio objects, so a higher box gain re-weights localisation relative to classification, which matters most for the strict high-IoU thresholds that dominate mAP50-95; heavy mosaic shrinks already-tiny objects further and can starve the model of realistic full-resolution context, so reducing it should help small-object regression; and a lower lr0 reduces late-training weight noise so the box head can settle into tighter boxes. All three therefore argue for continuing in the same direction. I will extend moderately, not aggressively, because the response surface is likely to be concave and overshooting risks landing past the optimum with no diagnostic signal to tell me which knob overshot: lr0 0.005->0.003 (another ~1.7x reduction, still far above the 0.0001 floor and high enough to avoid underfitting in a fixed-epoch schedule), mosaic 0.8->0.65 (keeps meaningful augmentation regularisation while further increasing the fraction of full-scale images), box 9.5->11.0 (a +1.5 step matching the previous +2.0 step in magnitude but slightly damped, staying well short of the 15.0 ceiling where classification loss would be starved). I am deliberately holding weight_decay at 0.0005 and hsv_v at 0.5 fixed this round: freezing two of five knobs means that if the score rises again I can credit the lr0/mosaic/box vector, and if it falls I know the turning point lies between Round 2 and Round 3 on that same vector, which makes the next interpolation step well-posed. If this configuration regresses below 0.6430, the natural follow-up is to interpolate back toward Round 2 (e.g. lr0~0.004, mosaic~0.72, box~10.2); if it improves, I will take one more damped step and then start probing weight_decay and hsv_v around the new optimum.",
+      "llm_base_iteration": "Round 2",
+      "llm_base_rationale": "Round 2 is the best configuration observed (0.6430 vs 0.6269) and is the only point clearly above the 0.6198 ± 0.0110 baseline band, so it is the most reliable anchor. Building on it also lets me reuse the Round 1 -> Round 2 displacement as an estimated improvement direction, which is the only gradient information recoverable from a score-only history.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.003,
+        "weight_decay": 0.0005,
+        "mosaic": 0.65,
+        "hsv_v": 0.5,
+        "box": 11.0
+      }
+    },
+    {
+      "round": 2,
+      "hyperparameters": {
+        "lr0": 0.003,
+        "weight_decay": 0.0005,
+        "mosaic": 0.65,
+        "hsv_v": 0.5,
+        "box": 11.0
+      },
+      "map5095": 0.65043,
+      "llm_reasoning": "Looking only at the three scores so far, there is a clean monotonic improvement: Round 1 (0.6269) -> Round 2 (0.6430, +0.0161) -> Round 3 (0.6504, +0.0074). All three runs moved along the same coordinated direction: lr0 decreasing (0.01 -> 0.005 -> 0.003), mosaic decreasing (1.0 -> 0.8 -> 0.65), box increasing (7.5 -> 9.5 -> 11.0), with hsv_v bumped once (0.4 -> 0.5) and weight_decay held constant at 0.0005 throughout. Since the score keeps rising along this direction, the rational move is to take one more step the same way, but with a smaller step size because the gain per step is shrinking (+0.0161 then +0.0074), which suggests we are approaching a plateau or optimum and a large jump risks overshooting past it. Concretely: lr0 0.003 -> 0.002 (same ~0.66x ratio as the last step, continuing the descent without collapsing to a near-frozen learning rate), mosaic 0.65 -> 0.55 (slightly smaller decrement than the previous 0.15 step; mosaic has never been tested below 0.65 so I do not want to jump straight to a very low value in case aggressive augmentation reduction reverses the trend), box 11.0 -> 12.5 (same +1.5 increment that produced the last gain, still well inside the 15.0 cap). I am holding weight_decay at 0.0005 and hsv_v at 0.5 deliberately: they are the only two knobs that have been effectively constant across the winning trajectory, so keeping them fixed makes this round a clean one-direction extrapolation test. If this configuration also improves, the trend is confirmed and I can push one more step or start probing weight_decay; if it flattens or drops, I will know the optimum is bracketed between Round 3 and this point and can interpolate back (e.g. lr0~0.0025, mosaic~0.6, box~11.5) instead of continuing to extrapolate. I am avoiding any repeat of the Round 1 region (high lr0, full mosaic, low box), which is clearly the worst area explored.",
+      "llm_base_iteration": "Round 3",
+      "llm_base_rationale": "Round 3 is the best-scoring configuration so far (0.6504) and is also the most recent point on a strictly monotonic improvement path, so it is the most reliable anchor for the next step. Basing on Round 1 or Round 2 would mean stepping back to a demonstrably worse region of the space.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.002,
+        "weight_decay": 0.0005,
+        "mosaic": 0.55,
+        "hsv_v": 0.5,
+        "box": 12.5
+      }
+    },
+    {
+      "round": 3,
+      "hyperparameters": {
+        "lr0": 0.002,
+        "weight_decay": 0.0005,
+        "mosaic": 0.55,
+        "hsv_v": 0.5,
+        "box": 12.5
+      },
+      "map5095": 0.6477,
+      "llm_reasoning": "Looking only at the four scores so far, each hyperparameter shows a clear single-peaked trend with the peak at or just past Round 3.\n\n- lr0: 0.01 (0.6269) -> 0.005 (0.6430) -> 0.003 (0.6504) -> 0.002 (0.6477). Monotone improvement while lowering to 0.003, then a reversal at 0.002. Optimum is bracketed in [0.002, 0.003], likely closer to 0.003.\n- mosaic: 1.0 -> 0.8 -> 0.65 improved, 0.55 regressed. Optimum bracketed in [0.55, 0.65].\n- box: 7.5 -> 9.5 -> 11.0 improved, 12.5 regressed. Optimum bracketed in [11.0, 12.5].\n- hsv_v: only two values tried (0.4 in Round 1, 0.5 in Rounds 2-4). 0.5 co-occurred with all three best scores, but it is confounded with the other changes, so I will hold it fixed at 0.5 rather than spend this round on it.\n- weight_decay: held at 0.0005 for all four runs, so it is completely unexplored. It is the only axis with zero information.\n\nStrategy: Rounds 1-4 moved three knobs simultaneously in the same direction, which worked well as a coarse descent but has now overshot. The remaining gain along lr0/mosaic/box is small (the 0.6504 -> 0.6477 drop is only 0.0027, within plausible seed noise), so a pure interpolation between Round 3 and Round 4 would likely land within noise of 0.6504 and teach me little. Instead I will (a) settle the three bracketed knobs at a mild interpolation biased toward the Round 3 side, and (b) spend the new information budget on the untouched weight_decay axis.\n\nSpecifically: lr0=0.0025 (midpoint, slightly favoring the 0.003 side by keeping it above the failing 0.002), mosaic=0.62, box=11.5 (both one small step past Round 3 toward Round 4, staying inside the bracket). Since mosaic has been reduced substantially from the 1.0 default, the effective augmentation strength is lower than at baseline, so a modest increase in weight_decay to 0.0007 is a sensible compensating regularizer and simultaneously gives me the first data point off the 0.0005 line. If this run lands at or above ~0.6504 I will push weight_decay further next round; if it drops noticeably I will revert to 0.0005 and conclude the three-knob interpolation is already at the plateau.",
+      "llm_base_iteration": "Round 3",
+      "llm_base_rationale": "Round 3 (0.6504) is the best score observed and sits at the turning point of all three trending axes. Round 4 overshot on lr0 (down), mosaic (down) and box (up) simultaneously, so Round 3 is the correct anchor; Round 4 is still useful as the far bracket that tells me how much further I can move before the score degrades.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.0025,
+        "weight_decay": 0.0007,
+        "mosaic": 0.62,
+        "hsv_v": 0.5,
+        "box": 11.5
+      }
+    },
+    {
+      "round": 4,
+      "hyperparameters": {
+        "lr0": 0.0025,
+        "weight_decay": 0.0007,
+        "mosaic": 0.62,
+        "hsv_v": 0.5,
+        "box": 11.5
+      },
+      "map5095": 0.66298,
+      "llm_reasoning": "Score history shows a clear, monotone-then-peaked structure along the axes explored so far. (1) lr0: 0.01 -> 0.6269, 0.005 -> 0.6430, 0.003 -> 0.6504, 0.002 -> 0.6477, 0.0025 -> 0.6630. The response is unimodal with an optimum right around 0.0025-0.003, so I keep lr0 = 0.0025 and do not spend this round re-probing it. (2) box: 7.5 -> 0.6269, 9.5 -> 0.6430, 11.0 -> 0.6504, 12.5 -> 0.6477, 11.5 -> 0.6630. Also peaked near 11.0-11.5; keep box = 11.5. (3) mosaic: 1.0 -> 0.6269, 0.8 -> 0.6430, 0.65 -> 0.6504, 0.55 -> 0.6477, 0.62 -> 0.6630. Peak near 0.62-0.65; keep mosaic = 0.62. All three of these axes have now been bracketed on both sides, so further movement along them is low expected value. (4) The two axes that remain effectively unexplored are weight_decay (0.0005 in rounds 1-4, 0.0007 in the best round) and hsv_v (0.4 once, then frozen at 0.5 for four consecutive rounds). The single weight_decay increase 0.0005 -> 0.0007 coincided with the largest jump in the entire history (0.6504 -> 0.6630), which is suggestive even though it was confounded with other changes. Since the best configurations all sit at a fairly low learning rate with reduced mosaic, the run is likely tolerant of (and may benefit from) a bit more regularization / photometric variety to compensate for the weakened geometric augmentation. I therefore hold the three saturated axes fixed at the best-known values and make one modest move on each unexplored axis: weight_decay 0.0007 -> 0.001 and hsv_v 0.5 -> 0.6. Both are small steps in the same direction, so if the score improves I can push further next round, and if it drops I can fall back and disambiguate the two by testing them separately. This keeps the proposal a local refinement of the best point (Round 5) rather than a risky jump, while still buying new information about dimensions the search has never touched.",
+      "llm_base_iteration": "Round 5",
+      "llm_base_rationale": "Round 5 (0.6630) is the highest score observed and beats the next best (Round 3, 0.6504) by a clear margin of ~0.013, which is larger than the spread among rounds 2-4. It also sits at the interior peak of every axis that has been bracketed (lr0 ~0.0025, mosaic ~0.62, box ~11.5), so it is the most credible basin in the search space. Building on it lets me freeze the settled axes and spend this round's information budget on weight_decay and hsv_v, which have barely been varied.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.0025,
+        "weight_decay": 0.001,
+        "mosaic": 0.62,
+        "hsv_v": 0.6,
+        "box": 11.5
+      }
+    },
+    {
+      "round": 5,
+      "hyperparameters": {
+        "lr0": 0.0025,
+        "weight_decay": 0.001,
+        "mosaic": 0.62,
+        "hsv_v": 0.6,
+        "box": 11.5
+      },
+      "map5095": 0.6551,
+      "llm_reasoning": "Round 6 perturbed two axes off the Round-5 optimum (weight_decay 0.0007->0.001 and hsv_v 0.5->0.6) and the score dropped 0.6630 -> 0.6551. Combined with earlier history this pins down two axes fairly well: (a) weight_decay 0.0005 -> 0.0007 improved things (R3 0.6504 -> R5 0.6630 at similar settings) but 0.001 over-regularizes, so 0.0007 is near optimal; (b) hsv_v 0.4 -> 0.5 was part of the early gains, while 0.5 -> 0.6 hurt, so 0.5 is near optimal. For lr0, the score curve over 0.01/0.005/0.003/0.002 (0.6269/0.6430/0.6504/0.6477) is unimodal with a peak around 0.0025-0.003, and 0.0025 delivered the best run, so I hold it. For box, 11.5 beat both 11.0 (R3) and 12.5 (R4), so I hold it too. That leaves mosaic as the only axis never probed in isolation: it was swept downward (1.0 -> 0.8 -> 0.65 -> 0.55) always entangled with lr0 and box changes, and 0.62-0.65 sits at the top, but the upper side of that basin (0.65-0.75) has never been tested at the current lr0/box/wd setting. So I revert weight_decay and hsv_v to the Round-5 best values and make a single clean move on mosaic to 0.70, which both tests the unexplored side of the mosaic basin and is a configuration not yet present in the history.",
+      "llm_base_iteration": "Round 5",
+      "llm_base_rationale": "Round 5 (0.6630) is the historical best and Round 6's two-axis perturbation away from it was strictly worse, confirming it as the current local optimum. I therefore restart from Round 5's exact settings and change only the one hyperparameter (mosaic) whose local direction has never been isolated, keeping the confirmed-good lr0, weight_decay, hsv_v and box fixed.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.0025,
+        "weight_decay": 0.0007,
+        "mosaic": 0.7,
+        "hsv_v": 0.5,
+        "box": 11.5
+      }
+    },
+    {
+      "round": 6,
+      "hyperparameters": {
+        "lr0": 0.0025,
+        "weight_decay": 0.0007,
+        "mosaic": 0.7,
+        "hsv_v": 0.5,
+        "box": 11.5
+      },
+      "map5095": 0.6573,
+      "llm_reasoning": "Score history analysis: (1) lr0 shows a clear unimodal trend — 0.01 (0.6269) < 0.005 (0.6430) < 0.003 (0.6504) < 0.0025 (0.6630 best), while 0.002 (0.6477, confounded with other changes) was not better, so lr0≈0.0025 appears to sit near the optimum and should be held fixed. (2) weight_decay: 0.0005→0.0007 coincided with the jump to the best score, while 0.001 (Round 6) dropped to 0.6551, so 0.0007 is the better setting. (3) hsv_v: 0.4 (Round 1, poor) and 0.6 (Round 6, 0.6551) are both worse than 0.5, which appears in every top run — keep 0.5. (4) mosaic is now the only axis with a fresh, clean signal: holding all other Round-5 values fixed, raising mosaic 0.62→0.70 cost -0.0057 (0.6630→0.6573). The mosaic trend across rounds (1.0→0.8→0.65→0.62) has been monotonically improving as mosaic decreases, and this round confirms the gradient points downward. Round 4 used mosaic=0.55 but at a different lr/box, so 0.55 is NOT yet tested at the current best operating point. Therefore I take one clean single-variable step down the confirmed gradient: mosaic 0.62→0.55, everything else identical to Round 5. This keeps the experiment interpretable — if it improves, I continue descending toward ~0.45-0.50 next round; if it degrades, mosaic≈0.62 is bracketed as the optimum (0.55 below, 0.70 above) and I will pivot to refining box in the 11.0-12.5 window, which remains the least-resolved axis.",
+      "llm_base_iteration": "Round 5",
+      "llm_base_rationale": "Round 5 (0.6630) is the historical best and the only configuration that all subsequent single-variable probes have failed to beat. Rounds 6 and 7 were both one-step perturbations off Round 5 (wd+hsv_v up, mosaic up) and both regressed, which confirms Round 5 sits in the best-known basin. Building off it keeps the comparison controlled: by changing only mosaic I get an unambiguous read on the mosaic gradient direction below 0.62, rather than a confounded multi-variable result.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.0025,
+        "weight_decay": 0.0007,
+        "mosaic": 0.55,
+        "hsv_v": 0.5,
+        "box": 11.5
+      }
+    },
+    {
+      "round": 7,
+      "hyperparameters": {
+        "lr0": 0.0025,
+        "weight_decay": 0.0007,
+        "mosaic": 0.55,
+        "hsv_v": 0.5,
+        "box": 11.5
+      },
+      "map5095": 0.64674,
+      "llm_reasoning": "History analysis (score-only): The search has converged to a clear basin around lr0≈0.0025, wd≈0.0007, mosaic≈0.62, hsv_v=0.5, box≈11.5 (Round 5, 0.6630). The three most recent probes all moved away from that point and all lost ground: R6 (wd 0.001 + hsv_v 0.6) -> 0.6551, R7 (mosaic 0.70) -> 0.6573, R8 (mosaic 0.55) -> 0.6467. Since R7 and R8 were clean single-axis mosaic probes bracketing 0.62 and both fell, mosaic=0.62 is essentially at its local optimum and should be frozen. hsv_v=0.5 also appears better than 0.6, so freeze it too; every top-4 run used 0.5. weight_decay: 0.0005 configs gave 0.6504/0.6477, 0.0007 gave 0.6630/0.6573/0.6467, 0.001 gave 0.6551 -> 0.0007 remains the best-supported value, so keep it. That leaves only lr0 and box as still-underexplored axes at the current best mosaic setting. The lr0 sequence 0.01->0.6269, 0.005->0.6430, 0.003->0.6504, 0.0025->0.6630 is monotonically improving as lr0 drops; the only apparent counterexample is Round 4 (lr0=0.002 -> 0.6477), but that run was confounded by mosaic=0.55, which Round 8 independently showed costs roughly -0.016 on its own. Adjusting Round 4 for that mosaic penalty puts an lr0=0.002/box=12.5 configuration at roughly parity-or-better with the current best, meaning the lower-lr / higher-box direction has never actually been tested cleanly. So I take a modest step in exactly that direction from the Round 5 anchor: lr0 0.0025 -> 0.0022 and box 11.5 -> 12.0, holding mosaic, hsv_v and weight_decay fixed at their best-known values. The steps are deliberately small (-12% lr, +4% box) because observed run-to-run differences of ~0.006 are within measurement noise, so I want a move large enough to register but small enough to stay inside the good basin. This also avoids repeating any previously tested combination.",
+      "llm_base_iteration": "Round 5",
+      "llm_base_rationale": "Round 5 (0.6630) is the highest-scoring configuration observed and the three subsequent perturbations away from it (R6, R7, R8) all scored lower, confirming it sits at the center of the current best basin. Rounds 6-8 have already ruled out mosaic 0.55/0.70, hsv_v 0.6 and wd 0.001, so the only informative remaining directions are lr0 and box, which are best probed from the Round 5 anchor rather than from any inferior point.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.0022,
+        "weight_decay": 0.0007,
+        "mosaic": 0.62,
+        "hsv_v": 0.5,
+        "box": 12.0
+      }
+    },
+    {
+      "round": 8,
+      "hyperparameters": {
+        "lr0": 0.0022,
+        "weight_decay": 0.0007,
+        "mosaic": 0.62,
+        "hsv_v": 0.5,
+        "box": 12.0
+      },
+      "map5095": 0.65234,
+      "llm_reasoning": "Round 5 (lr0=0.0025, wd=0.0007, mosaic=0.62, hsv_v=0.5, box=11.5) remains the best at 0.6630. Around this point I have now probed several single-dimension directions and all came back lower: mosaic up to 0.70 (0.6573), mosaic down to 0.55 (0.6467), wd up to 0.001 with hsv_v 0.6 (0.6551), and this round lr0 down to 0.0022 with box up to 12.0 (0.6523). Two useful conclusions: (a) mosaic is well-centered at ~0.62 and should not be moved further, (b) lowering lr0 below 0.0025 hurts, which is consistent with the coarse sweep where 0.002 (R4, 0.6477) was worse than 0.003 (R3, 0.6504) at similar settings. The only clearly unexplored direction from the best point is a small INCREASE in lr0 while keeping wd=0.0007 (the value that produced the best score). The coarse sweep showed a broad optimum between lr0 0.0025 and 0.003, and R3's 0.003 run used the inferior wd=0.0005 and box=11.0, so lr0~0.0028 paired with the better wd=0.0007 and box=11.5 has not actually been tested. I keep all other knobs exactly at the best-known values so the probe is single-dimensional and interpretable given the ~±0.011 seed noise.",
+      "llm_base_iteration": "Round 5",
+      "llm_base_rationale": "Round 5 is the historical best (0.6630) and every subsequent perturbation has scored below it, so it remains the best local optimum estimate. I anchor on it and change only lr0, the one dimension whose upward side has never been tested at Round 5's wd/box settings.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.0028,
+        "weight_decay": 0.0007,
+        "mosaic": 0.62,
+        "hsv_v": 0.5,
+        "box": 11.5
+      }
+    },
+    {
+      "round": 9,
+      "hyperparameters": {
+        "lr0": 0.0028,
+        "weight_decay": 0.0007,
+        "mosaic": 0.62,
+        "hsv_v": 0.5,
+        "box": 11.5
+      },
+      "map5095": 0.65379,
+      "llm_reasoning": "Round 5 (lr0=0.0025, wd=0.0007, mosaic=0.62, hsv_v=0.5, box=11.5 -> 0.6630) remains the best. Every single-axis perturbation around it has come back lower: lr0 down to 0.0022 (0.6523), lr0 up to 0.0028 (0.6538), mosaic up to 0.70 (0.6573), mosaic down to 0.55 (0.6467), box up to 12.0 (0.6523), and wd=0.001 combined with hsv_v=0.6 (0.6551). The lr0 curve is clearly unimodal with a peak right at ~0.0025, and mosaic peaks at ~0.62, so those two axes look converged. box is flat-to-slightly-worse in both directions from 11.5. The one axis that has never been tested cleanly is hsv_v: the only non-0.5 value tried (0.6) was confounded with a weight_decay change, and it scored below Round 5. That gives weak evidence that value augmentation above 0.5 hurts, and the downward side of hsv_v is completely unexplored. Traffic lights are small, color/brightness-critical objects, so excessive brightness jitter is a plausible source of label-signal degradation; reducing it is the most information-rich single move left. I therefore keep all four converged axes fixed at the Round 5 values and change only hsv_v to 0.44, giving a clean one-variable read. If this gains, the next step is hsv_v ~0.35; if it loses, hsv_v 0.5 is confirmed optimal and the remaining budget should go to a fine weight_decay sweep (0.00085).",
+      "llm_base_iteration": "Round 5",
+      "llm_base_rationale": "Round 5 is the historical best (0.6630) and all nine other runs, including every single-axis perturbation of it, scored lower. With lr0, mosaic, and box each showing worse results on both sides of the Round 5 setting, that point is the only credible local optimum to build from; exploring a fresh axis (hsv_v) from that base maximizes the chance of a real gain rather than re-sampling noise.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.0025,
+        "weight_decay": 0.0007,
+        "mosaic": 0.62,
+        "hsv_v": 0.44,
+        "box": 11.5
+      }
+    },
+    {
+      "round": 10,
+      "hyperparameters": {
+        "lr0": 0.0025,
+        "weight_decay": 0.0007,
+        "mosaic": 0.62,
+        "hsv_v": 0.44,
+        "box": 11.5
+      },
+      "map5095": 0.64488,
+      "llm_reasoning": "Score-only analysis of 11 runs. The search has clearly converged to a basin around Round 5 (lr0=0.0025, wd=0.0007, mosaic=0.62, hsv_v=0.5, box=11.5 -> 0.6630). Every single-axis perturbation tried since then has come back lower, but all within ~0.008-0.018 of the best, i.e. comparable to the ~0.011 run-to-run noise level implied by the baseline std. So the surface around Round 5 is flat and mostly noise-limited rather than showing a strong gradient.\n\nWhat the history rules out:\n- lr0: 0.0022 (0.6523, confounded with box=12.0) and 0.0028 (0.6538) both below 0.6630, and the coarse sweep 0.01->0.005->0.003->0.002 peaked around 0.0025-0.003. lr0=0.0025 looks right; no reason to move.\n- mosaic: 0.7 (0.6573) and 0.55 (0.6467, twice-ish confirmed by Round 4's 0.6477) both below 0.62. Clear interior optimum at ~0.62.\n- hsv_v: 0.44 (0.6449, this round) and 0.6 (0.6551, confounded with wd=0.001) both below 0.5. 0.5 is well-bracketed; stop probing this axis.\n- box: 12.0 (0.6523, confounded), 12.5 (0.6477), 11.0 (0.6504, confounded with lr0=0.003). 11.5 remains the best-supported value.\n\nThe one axis that has NOT been cleanly tested is weight_decay. The only evidence above 0.0007 is Round 6, which changed wd 0.0007->0.001 AND hsv_v 0.5->0.6 simultaneously. Since this round independently showed hsv_v is sensitive (0.44 cost ~0.018), it is plausible that Round 6's drop was driven mostly by the hsv_v change and that wd>0.0007 is actually fine or even better. Below 0.0007, wd=0.0005 only appears in Rounds 1-4 where lr0/mosaic/box were all different, so it is also unconfirmed at the current operating point. Given wd 0.0005->0.0007 coincided with the single largest jump in the whole history (0.6477 -> 0.6630), the regularization axis is the most promising remaining direction, and slightly more decay is the untested side.\n\nProposal: hold lr0, mosaic, hsv_v, box at the Round 5 optimum and move weight_decay alone to 0.00085 (midpoint of the confirmed-good 0.0007 and the confounded 0.001). This is a clean single-coordinate probe that disentangles Round 6, has not been run before, and risks little since it stays inside a bracket whose worst observed endpoint was still 0.6551.",
+      "llm_base_iteration": "Round 5",
+      "llm_base_rationale": "Round 5 is the historical best (0.6630) and every subsequent single-axis move away from it scored lower, so it is the center of the current basin. Rounds 6-11 have now bracketed lr0 (0.0022/0.0028), mosaic (0.55/0.7), hsv_v (0.44/0.6) and box (12.0) around it, leaving weight_decay as the only axis without a clean, unconfounded probe. Building on Round 5 and changing that one variable maximizes information gain while keeping the configuration in the best-known region.",
+      "llm_thinking": null,
+      "llm_proposal_for_next_round": {
+        "lr0": 0.0025,
+        "weight_decay": 0.00085,
+        "mosaic": 0.62,
+        "hsv_v": 0.5,
+        "box": 11.5
+      }
+    }
+  ]
+}
