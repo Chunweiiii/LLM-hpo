@@ -15,7 +15,7 @@ training:
   imgsz: 640
   optimizer: "AdamW"    # 明確指定,不要用 'auto'
   pretrained: true       # 明確傳入,不依賴預設
-  workers: 4             # 保守設定,實驗室機器系統RAM只有16GB,避免multiprocessing把記憶體壓滿
+  workers: 4           # 保守設定,實驗室機器系統RAM只有16GB,避免multiprocessing把記憶體壓滿
 
 hpo:
   # 2026-09-19 曾短暫改成 11,把 8 個主線 LLM 條件 + 2 個 budget-aware 條件
@@ -23,7 +23,7 @@ hpo:
   # 卻從未被訓練驗證的最後一個提案(詳見 docs/decisions.md「round11 補跑」
   # 一列)。全部 10 個實驗都已補跑完成,round10 沒有一個超過原本的歷史最佳,
   # 9 組排名表維持不變,已改回 10,之後的正式輪數預算就是這個值。
-  num_rounds: 10
+  num_rounds: 11
   seeds: [0, 1, 2, 3, 4]   # 5-seed 驗證用(2026-09 從 3-seed 擴充,見 docs/decisions.md「5-seed 擴充」)
 
 baseline:
@@ -38,8 +38,14 @@ baseline:
   weakest_class: "yellow light"   # 5 個 seed 排序完全一致,確認穩定
 
 llm:
+  # 2026-09-21:這份清單目前只給人看(實際跑的 MODELS 是
+  # experiments/run_full_diagnosis.py 動態組出來的,見該檔案模組說明),
+  # 手動同步更新以免兩邊看起來對不上。qwen3-14b 先保留(校規排除中國
+  # 模型,還沒決定要不要整個從論文拿掉,只是不能當最終候選),gemma4-12b
+  # 是新加入的低階模型主線候選之一。
   models:
     - "claude-haiku-4.5"
     - "claude-sonnet-5"
     - "claude-opus-5"
-    - "qwen3-14b"   # 本機 Ollama,通用推理模型(非程式碼特化),見 docs/decisions.md
+    - "qwen3-14b"     # 本機 Ollama,通用推理模型(非程式碼特化),見 docs/decisions.md
+    - "gemma4-12b"    # 本機 Ollama,非中國開源模型候選之一

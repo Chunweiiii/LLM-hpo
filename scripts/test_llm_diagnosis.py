@@ -1,11 +1,16 @@
 """
 測試工具(可重複使用):驗證「Facts+Flags 診斷報告 -> LLM -> JSON 超參數
-提案」這整條線有沒有正確運作。四個 LLM(qwen3-14b / claude-haiku-4.5 /
-claude-sonnet-5 / claude-opus-5)共用這一個檔案,用 --model 參數切換,
-不用每個模型各開一個檔案。
+提案」這整條線有沒有正確運作。所有 LLM(本機 Ollama 開源模型 +
+claude-haiku-4.5 / claude-sonnet-5 / claude-opus-5)共用這一個檔案,用
+--model 參數切換,不用每個模型各開一個檔案。
+
+2026-09-21:choices 改成動態從 src/llm_agent.py 的 OLLAMA_MODELS /
+CLAUDE_MODELS 兩個註冊表組出來,之後在 llm_agent.py 加新的本機模型,這裡
+會自動跟著多一個可選項,不用兩邊各改一次。
 
 用法:
     python scripts/test_llm_diagnosis.py --model qwen3-14b       (預設)
+    python scripts/test_llm_diagnosis.py --model gemma4-12b
     python scripts/test_llm_diagnosis.py --model claude-sonnet-5
     python scripts/test_llm_diagnosis.py --model claude-haiku-4.5
     python scripts/test_llm_diagnosis.py --model claude-opus-5
@@ -24,7 +29,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.summarize_log import read_log, compute_facts, diagnose, to_report_text
-from src.llm_agent import propose_hyperparameters
+from src.llm_agent import propose_hyperparameters, OLLAMA_MODELS, CLAUDE_MODELS
 
 
 def main():
@@ -32,7 +37,7 @@ def main():
     parser.add_argument(
         "--model",
         default="qwen3-14b",
-        choices=["qwen3-14b", "claude-haiku-4.5", "claude-sonnet-5", "claude-opus-5"],
+        choices=list(OLLAMA_MODELS) + list(CLAUDE_MODELS),
     )
     args = parser.parse_args()
 

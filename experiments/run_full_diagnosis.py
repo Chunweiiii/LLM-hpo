@@ -2,13 +2,18 @@
 完整診斷組進入點:用完整兩層診斷(Facts + 5 Diagnostic Flags)跑 N 輪
 HPO 迴圈(N 預設 = config/settings.yaml 的 hpo.num_rounds,可用 --rounds 覆蓋)。
 
-預設依序跑全部四個模型(Claude Haiku 4.5 / Sonnet 5 / Opus 5 / Qwen3-14B),
-也可以用 --model 只跑其中一個,例如先跑 Qwen 驗證整條線,之後 Claude API
-key 設好了再分開跑其他三個,不用等全部一起跑完。
+2026-09-21:校規排除中國模型後,MODELS 改成動態從 src/llm_agent.py 的
+OLLAMA_MODELS / CLAUDE_MODELS 兩個註冊表組出來(不再手寫死清單),目前含
+Claude Haiku 4.5 / Sonnet 5 / Opus 5 + 本機 Ollama 的 Qwen3-14B(先保留,
+還沒決定是否整個拿掉)、Gemma 4 12B(新加入,低階模型主線候選之一)。
+之後再加 Ministral 3 14B / Phi-4 14B,只要在 llm_agent.py 的
+OLLAMA_MODELS 多加一筆,這裡會自動跟著多一個可跑的 --model 選項。
+也可以用 --model 只跑其中一個,例如先跑一個本機模型驗證整條線,之後
+Claude API key 設好了再分開跑其他模型,不用等全部一起跑完。
 
 用法:
-    python experiments/run_full_diagnosis.py                    (跑全部四個,預設輪數)
-    python experiments/run_full_diagnosis.py --model qwen3-14b  (只跑 Qwen,預設輪數)
+    python experiments/run_full_diagnosis.py                    (跑全部,預設輪數)
+    python experiments/run_full_diagnosis.py --model gemma4-12b (只跑 Gemma 4 12B,預設輪數)
     python experiments/run_full_diagnosis.py --model qwen3-14b --rounds 20
         (只跑 Qwen,這次跑 20 輪,不影響 settings.yaml 的預設值,
          也不影響之後跑其他模型時的輪數,避免不小心把 Claude 模型也跑成
@@ -48,8 +53,9 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.utils import load_settings, save_json
 from src.hpo_loop import run_hpo_loop
+from src.llm_agent import OLLAMA_MODELS, CLAUDE_MODELS
 
-MODELS = ["claude-haiku-4.5", "claude-sonnet-5", "claude-opus-5", "qwen3-14b"]
+MODELS = list(CLAUDE_MODELS) + list(OLLAMA_MODELS)
 
 # 2026-09 教授指出舊版(SEARCH_SPACE 中點)baseline 太高、跟 HPO 上限太接近
 # (ceiling effect),改用 Ultralytics 框架本身未經修改的預設值,模擬「完全
@@ -71,7 +77,7 @@ INITIAL_HYPERPARAMETERS = {
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", choices=MODELS, default=None,
-                         help="只跑指定模型,不指定的話依序跑全部四個")
+                         help="只跑指定模型,不指定的話依序跑 MODELS 裡全部模型")
     parser.add_argument("--rounds", type=int, default=None,
                          help="覆蓋 settings.yaml 的 hpo.num_rounds,只影響這次執行,"
                               "不會改到設定檔(例如 2026-09 輪數敏感度分析,只用 Qwen "
@@ -79,15 +85,24 @@ def main():
     parser.add_argument("--budget-aware", action="store_true",
                          help="讓 LLM 每輪知道目前第幾輪/總共幾輪/還剩幾輪,"
                               "見上方模組說明跟 docs/decisions.md")
+    parser.add_argument("--hinted", action="store_true",
+                         help="2026-09-23 新增:改用 prompts/program_hinted.md,"
+                              "額外提供「診斷類型 -> 該調哪個超參數」的對應提示,"
+                              "以及鼓勵大步跳脫局部搜索的探索提示,見該檔案結尾"
+                              "「2026-09-23 追加對照組說明」跟 docs/decisions.md。"
+                              "刻意獨立成新的 flag、新的檔名後綴(_hinted),"
+                              "不影響主線(program.md,無提示)的比較設計。")
     args = parser.parse_args()
 
     models_to_run = [args.model] if args.model else MODELS
 
     settings = load_settings()
-    prompt_file = (
-        "prompts/program_budget_aware.md" if args.budget_aware
-        else "prompts/program.md"
-    )
+    if args.budget_aware:
+        prompt_file = "prompts/program_budget_aware.md"
+    elif args.hinted:
+        prompt_file = "prompts/program_hinted.md"
+    else:
+        prompt_file = "prompts/program.md"
     with open(prompt_file, "r", encoding="utf-8") as f:
         system_prompt = f.read()
 
@@ -103,11 +118,15 @@ def main():
         suffix_parts.append(f"r{args.rounds}")
     if args.budget_aware:
         suffix_parts.append("budgetaware")
+    if args.hinted:
+        suffix_parts.append("hinted")
     suffix = ("_" + "_".join(suffix_parts)) if suffix_parts else ""
 
     for model_key in models_to_run:
         print(f"=== Running full-diagnosis HPO loop: {model_key} "
-              f"({num_rounds} rounds{', budget-aware' if args.budget_aware else ''}) ===")
+              f"({num_rounds} rounds"
+              f"{', budget-aware' if args.budget_aware else ''}"
+              f"{', hinted' if args.hinted else ''}) ===")
         save_path = f"results/progress_{model_key}{suffix}.json"
         result = run_hpo_loop(
             model_key=model_key,

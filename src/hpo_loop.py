@@ -12,6 +12,14 @@ Qwen HPO 資料遺失後加上,見 docs/decisions.md):
      重新請 LLM 提案,最多重試 MAX_RETRIES 次,還是不行才真正中斷(這種
      算「有害」錯誤,不能悄悄放行,例如之前 Qwen 漏了 lr0,程式沒檢查,
      結果悄悄改用 Ultralytics 內建預設值,整輪結果因此不可信)。
+  3b. 2026-09-23 新增:LLM 回覆本身不是合法 JSON(格式跑掉,不是超參數
+     數值問題)原本沒有任何地方接住,json.decoder.JSONDecodeError 會直接
+     讓整個 process 崩潰——llama3.1-8b 在 hinted 診斷組多次撞到,靠手動
+     重跑繞過(resume 機制保住進度)一開始還行,但同一輪反覆卡住之後
+     決定處理。做法比照第 3 點:llm_agent.py 的 _extract_json() 改成把
+     json.JSONDecodeError 轉成 LLMResponseParseError 往外丟,這裡一樣
+     當「有害」錯誤處理,附上錯誤訊息重新請 LLM 提案,最多重試
+     MAX_RETRIES 次,還是不行才真正中斷,見 docs/decisions.md。
   4. LLM 回傳完全重複的超參數(浪費一輪訓練預算但不算「有害」,例如
      中斷前的 13 輪資料裡 round6 跟 round9 完全一樣),一樣重新請 LLM
      提案,重試 MAX_RETRIES 次後如果還是重複,改成「軟接受」照跑,
@@ -65,13 +73,24 @@ run_score_only_loop() 是對照組(見該函式說明),刻意重用本模組大�
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 from .train_runner import train_run
-from .llm_agent import propose_hyperparameters
+from .llm_agent import propose_hyperparameters, OLLAMA_MODELS, LLMResponseParseError
 from .summarize_log import read_log, compute_facts, diagnose, to_report_text
 from .baseline_search import SEARCH_SPACE
 from .utils import save_json, load_json
+
+# 2026-09-23 新增(見 docs/decisions.md):本機 Ollama 模型呼叫完
+# propose_hyperparameters() 後,即使設了 keep_alive=0 要求立刻卸載,VRAM
+# 不保證在這次 Python 呼叫返回的當下就已經真正釋放乾淨——下一輪
+# train_run() 緊接著就要跟 YOLO 要訓練用的顯存,曾經在 gemma4-31b
+# score-only 實測踩到 CUDA out of memory(round2->round3 交接處,
+# torch.nn.utils.clip_grad_norm_ 這步噴錯)。加一個緩衝等待,只在模型是
+# 本機 Ollama 模型時才啟用(Claude API 模型不佔用本地 VRAM,不需要等待),
+# 純粹是操作面的保險措施,不影響任何實驗結果/超參數本身。
+GPU_UNLOAD_BUFFER_SEC = 15
 
 # 每輪 LLM 一定要提出這五個超參數,缺一個都不行(2026-09 從 4 個擴到 5 個,
 # 新增 box,見 docs/decisions.md)。2026-09 實測發現 Qwen 有一輪的回覆漏了
@@ -191,7 +210,25 @@ def _propose_with_retry(model_key: str, system_prompt: str, report_text: str,
     proposal = None
 
     for attempt in range(MAX_RETRIES + 1):
-        proposal = propose_hyperparameters(model_key, system_prompt, current_report)
+        try:
+            proposal = propose_hyperparameters(model_key, system_prompt, current_report)
+        except LLMResponseParseError as e:
+            if attempt == MAX_RETRIES:
+                raise ValueError(
+                    f"round {round_idx}({model_key}):重試 {MAX_RETRIES} 次後,"
+                    f"LLM 回覆仍然無法解析成合法 JSON。最後一次錯誤:{e}"
+                ) from e
+            print(f"  [round {round_idx}] LLM回覆不是合法JSON,重試中"
+                  f"({attempt + 1}/{MAX_RETRIES}):{e}")
+            current_report = (
+                report_text
+                + "\n\n=== 上一次提案的錯誤 ===\n"
+                "你上一次的回覆無法被解析成合法JSON(可能格式跑掉,例如漏引號、"
+                "多餘逗號、或摻雜了JSON以外的文字)。請重新只輸出一份合法的JSON,"
+                "不要包含任何JSON以外的文字。"
+            )
+            continue
+
         new_hp = proposal.get("new_hyperparameters", {})
 
         error_msg = _validate_hyperparameters(new_hp)
@@ -340,7 +377,7 @@ def run_hpo_loop(model_key: str, system_prompt: str, settings: dict,
             "llm_reasoning": proposal.get("reasoning"),
             "llm_base_iteration": proposal.get("base_iteration"),
             "llm_base_rationale": proposal.get("base_rationale"),
-            "llm_thinking": proposal.get("_thinking"),  # 只有 Qwen 有,Claude 模型會是 None
+            "llm_thinking": proposal.get("_thinking"),  # 只有本機 Ollama 模型有(見 OLLAMA_MODELS 的 think 設定),Claude 模型會是 None
             "llm_proposal_for_next_round": new_hp,     # LLM 對下一輪的提案
         })
 
@@ -350,6 +387,11 @@ def run_hpo_loop(model_key: str, system_prompt: str, settings: dict,
                 "num_rounds": num_rounds,
                 "history": history,
             }, save_path)
+
+        # 見模組開頭 GPU_UNLOAD_BUFFER_SEC 說明:只有本機 Ollama 模型、且
+        # 後面還有下一輪要訓練時才需要等待。
+        if model_key in OLLAMA_MODELS and round_idx + 1 < num_rounds:
+            time.sleep(GPU_UNLOAD_BUFFER_SEC)
 
     return {
         "best_round": best["round"],
@@ -456,7 +498,7 @@ def run_score_only_loop(model_key: str, system_prompt: str, settings: dict,
             "llm_reasoning": proposal.get("reasoning"),
             "llm_base_iteration": proposal.get("base_iteration"),
             "llm_base_rationale": proposal.get("base_rationale"),
-            "llm_thinking": proposal.get("_thinking"),  # 只有 Qwen 有,Claude 模型會是 None
+            "llm_thinking": proposal.get("_thinking"),  # 只有本機 Ollama 模型有(見 OLLAMA_MODELS 的 think 設定),Claude 模型會是 None
             "llm_proposal_for_next_round": new_hp,     # LLM 對下一輪的提案
         })
 
@@ -466,6 +508,11 @@ def run_score_only_loop(model_key: str, system_prompt: str, settings: dict,
                 "num_rounds": num_rounds,
                 "history": history,
             }, save_path)
+
+        # 見模組開頭 GPU_UNLOAD_BUFFER_SEC 說明:只有本機 Ollama 模型、且
+        # 後面還有下一輪要訓練時才需要等待。
+        if model_key in OLLAMA_MODELS and round_idx + 1 < num_rounds:
+            time.sleep(GPU_UNLOAD_BUFFER_SEC)
 
     return {
         "best_round": best["round"],

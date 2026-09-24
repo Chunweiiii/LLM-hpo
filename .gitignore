@@ -20,3 +20,47 @@ yolov8n.pt
 # === OS ===
 .DS_Store
 Thumbs.db
+
+# === 一次性腳本/工具(不是可重複使用的核心流程)===
+# find_batch_size.py:只在新機器上跑一次找 batch size 用,結果已經手動填進
+# config/settings.yaml,不用再跑。run_baseline_3seed.py(scripts/ 底下這份):
+# 已停用的舊版,被 experiments/run_baseline_3seed.py 取代,檔案開頭直接
+# raise RuntimeError。run_remaining_queue.py:一次性的排隊執行腳本,
+# 對應 remaining_queue_log.txt 那次收尾。regenerate_report_for_example.py:
+# 檔案開頭就寫明是「一次性小工具」,重組 few-shot example 用的。
+scripts/find_batch_size.py
+scripts/run_baseline_3seed.py
+scripts/run_remaining_queue.py
+regenerate_report_for_example.py
+
+# === 一次性執行紀錄(queue log)===
+budgetaware_queue_log.txt
+overnight_queue_log.txt
+rep2_queue_log.txt
+remaining_queue_log.txt
+round11_queue_log.txt
+
+# === 產出物暫存資料夾(圖表 png/html,不是原始碼)===
+Claude outputs/
+
+# === 之前跑過、但沒有畫在最終圖表上的模型/方法紀錄 ===
+# 最終圖表(scripts/plot_ranking_table.py、scripts/plot_trajectory.py)只
+# 比較 4 個模型:llama3.1-8b / phi4-14b / gemma4-12b(用 hinted 當診斷組)+
+# claude-haiku-4.5(用它自己的 full-diagnosis 當診斷組)。results/ 底下只
+# 保留這 4 個模型的 full_diagnosis / score_only 結果,加上
+# baseline_3seed.json(畫圖用的 baseline 值,兩支畫圖腳本都會讀)和
+# d4_d5_thresholds.json(D4/D5 診斷閾值,是所有模型共用的方法論設定,不是
+# 某一個模型的實驗紀錄,所以留著)。其餘一律忽略,包含全部
+# progress_*.json(中間存檔,最終結果已經在 full_diagnosis/score_only
+# 定案,不需要進版控)。
+results/*.json
+!results/baseline_3seed.json
+!results/d4_d5_thresholds.json
+!results/full_diagnosis_llama3.1-8b_hinted.json
+!results/score_only_llama3.1-8b.json
+!results/full_diagnosis_phi4-14b_hinted.json
+!results/score_only_phi4-14b.json
+!results/full_diagnosis_gemma4-12b_hinted.json
+!results/score_only_gemma4-12b.json
+!results/full_diagnosis_claude-haiku-4.5.json
+!results/score_only_claude-haiku-4.5.json

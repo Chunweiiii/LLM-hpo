@@ -4,9 +4,12 @@ score-only 對照組進入點:重現 Zhang et al. 2023 做法,每輪只給最終
 可用 --rounds 覆蓋),跟 experiments/run_full_diagnosis.py 同一個模型的結果
 做控制變因對照,驗證 Facts + Diagnostic Flags 這套診斷架構本身是否有貢獻。
 
+2026-09-21:MODELS 改成動態從 src/llm_agent.py 的 OLLAMA_MODELS /
+CLAUDE_MODELS 組出來,跟 run_full_diagnosis.py 同步,見該檔案模組說明。
+
 用法跟 run_full_diagnosis.py 一致:
-    python experiments/run_score_only.py                    (跑全部四個,預設輪數)
-    python experiments/run_score_only.py --model qwen3-14b  (只跑 Qwen,預設輪數)
+    python experiments/run_score_only.py                    (跑全部,預設輪數)
+    python experiments/run_score_only.py --model gemma4-12b (只跑 Gemma 4 12B,預設輪數)
     python experiments/run_score_only.py --model qwen3-14b --rounds 20
 
 中斷接續:每個模型執行中都會即時把進度寫到
@@ -29,8 +32,9 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.utils import load_settings, save_json
 from src.hpo_loop import run_score_only_loop
+from src.llm_agent import OLLAMA_MODELS, CLAUDE_MODELS
 
-MODELS = ["claude-haiku-4.5", "claude-sonnet-5", "claude-opus-5", "qwen3-14b"]
+MODELS = list(CLAUDE_MODELS) + list(OLLAMA_MODELS)
 
 # 跟 experiments/run_full_diagnosis.py 用同一組起始超參數,兩組唯一該有的
 # 差異只能是「有沒有診斷資訊」,起始點、輪數、模型都要對齊,才有控制變因
@@ -47,7 +51,7 @@ INITIAL_HYPERPARAMETERS = {
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", choices=MODELS, default=None,
-                         help="只跑指定模型,不指定的話依序跑全部四個")
+                         help="只跑指定模型,不指定的話依序跑 MODELS 裡全部模型")
     parser.add_argument("--rounds", type=int, default=None,
                          help="覆蓋 settings.yaml 的 hpo.num_rounds,只影響這次執行,"
                               "不會改到設定檔")

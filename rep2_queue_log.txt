@@ -1,2 +1,0 @@
-﻿[2026-09-19 08:41:51] ===== replicate 2 queue 開始(Sonnet/Opus,完整診斷+純分數,共4組)=====
-[2026-09-19 08:41:51] 開始執行: python experiments/run_full_diagnosis.py --model claude-opus-5 --rounds 10 (第 1 次嘗試)

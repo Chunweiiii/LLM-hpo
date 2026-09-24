@@ -1,6 +1,0 @@
-﻿[2026-09-19 09:05:41] ===== budget-aware queue 開始(Opus 5 / Sonnet 5,完整診斷組)=====
-[2026-09-19 09:05:41] 開始執行: python experiments/run_full_diagnosis.py --model claude-opus-5 --budget-aware (第 1 次嘗試)
-[2026-09-19 10:33:42] 完成: results\full_diagnosis_claude-opus-5_budgetaware.json
-[2026-09-19 10:33:42] 開始執行: python experiments/run_full_diagnosis.py --model claude-sonnet-5 --budget-aware (第 1 次嘗試)
-[2026-09-19 11:55:13] 完成: results\full_diagnosis_claude-sonnet-5_budgetaware.json
-[2026-09-19 11:55:13] ===== budget-aware 排隊全部跑完了(個別步驟是否成功請看上面的 log)=====
