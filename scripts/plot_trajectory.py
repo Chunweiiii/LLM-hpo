@@ -11,10 +11,15 @@
 的 history(每輪實際分數),換算成 best-so-far(累計最大值)畫圖;
 results/baseline_3seed.json 的 map5095_mean 當 Novice baseline。
 
-模型範圍跟 plot_ranking_table.py 一樣的 4 個模型 —— 3 個小模型
-(gemma4-12b / llama3.1-8b / phi4-14b,用 hinted 當診斷組)+ Claude
-Haiku 4.5(用它自己的 full-diagnosis 當診斷組)。Condition 也跟表格一樣
-簡化成 "Diagnosis" / "Score-only" 兩種字眼。
+模型範圍跟 plot_ranking_table.py 一樣的 4 個模型 —— 全部統一用 hinted
+當診斷組(gemma4-12b / llama3.1-8b / phi4-14b 原本就用 hinted;Claude
+Haiku 4.5 於 2026-09-26 補跑 --hinted 後也改用 hinted 版本,四個模型
+的診斷組 prompt 完全一致,不再有 hinted/non-hinted 混用的問題)。
+Condition 也跟表格一樣簡化成 "Diagnosis" / "Score-only" 兩種字眼。
+
+2026-09-26 更新:Claude Haiku 4.5 的診斷組改成
+full_diagnosis_claude-haiku-4.5_hinted.json(best_round=7,
+best_map5095=0.66337),取代原本的非 hinted 版本(0.667)。
 
 顏色用 Wayne 提供的參考圖(Material Design 色票)量出來的:
     粉   #E91E63  Llama 3.1 8B(呼應參考圖裡表現最好的方法用粉紅+菱形)
@@ -28,6 +33,10 @@ Haiku 4.5(用它自己的 full-diagnosis 當診斷組)。Condition 也跟表格�
 x 軸範圍貼著資料(不用再留空白區);圖例圖是單獨一張裁到剛好包住圖例
 本身大小的圖片,兩張圖的顏色、marker、線型定義完全共用同一份資料,
 確保拼在一起時對得上。
+
+2026-09-24 更新:results/ 底下三個小模型的 hinted 結果檔已經改名(拿掉
+"_hinted" 後綴),因為 hinted 現在就是正式的診斷組。MODELS 已同步改成
+新檔名。
 """
 
 import argparse
@@ -43,10 +52,10 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 
 # (Method 顯示名稱, 診斷組檔名, score-only 檔名, 顏色, marker)
 MODELS = [
-    ("Llama 3.1 8B", "full_diagnosis_llama3.1-8b_hinted.json", "score_only_llama3.1-8b.json", "#E91E63", "D"),
-    ("Phi-4 14B", "full_diagnosis_phi4-14b_hinted.json", "score_only_phi4-14b.json", "#F57C00", "o"),
-    ("Gemma 4 12B", "full_diagnosis_gemma4-12b_hinted.json", "score_only_gemma4-12b.json", "#2E7D32", "^"),
-    ("Claude Haiku 4.5", "full_diagnosis_claude-haiku-4.5.json", "score_only_claude-haiku-4.5.json", "#2196F3", "*"),
+    ("Llama 3.1 8B", "full_diagnosis_llama3.1-8b.json", "score_only_llama3.1-8b.json", "#E91E63", "D"),
+    ("Phi-4 14B", "full_diagnosis_phi4-14b.json", "score_only_phi4-14b.json", "#F57C00", "o"),
+    ("Gemma 4 12B", "full_diagnosis_gemma4-12b.json", "score_only_gemma4-12b.json", "#2E7D32", "^"),
+    ("Claude Haiku 4.5", "full_diagnosis_claude-haiku-4.5_hinted.json", "score_only_claude-haiku-4.5.json", "#2196F3", "*"),
 ]
 
 GRAY = "#607D8B"

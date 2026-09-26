@@ -27,6 +27,12 @@ Qwen3-14B / Random Search baseline 都不是這四個模型比較的對象,所�
 ENTRIES 只留這四個模型(3 個小模型 + Claude Haiku 4.5,各自的
 score-only + diagnosis 兩種條件,共 8 筆),不是全專案排行榜。
 
+2026-09-24 更新:results/ 底下三個小模型的 hinted 結果檔已經改名(拿掉
+"_hinted" 後綴,例如 full_diagnosis_gemma4-12b_hinted.json ->
+full_diagnosis_gemma4-12b.json),因為 hinted 現在就是正式的診斷組,不用
+再用檔名特別標記。ENTRIES 已同步改成新檔名。舊檔名(帶 _hinted)跟舊的
+未加 hint 版本都已經不在 git 追蹤範圍內,見 .gitignore。
+
 Baseline (5-seed) 欄位顯示 "0.6198"(四捨五入到小數點後4位),
 (↑X.XX%) 的百分比也是用這個四捨五入後的 0.6198 當分母算的 —— 這是對照
 Wayne 原本手動做的表格圖反推驗證過的寫法,不是用 baseline_3seed.json
@@ -49,16 +55,16 @@ BASELINE_VALUE = 0.6198
 # 檔案格式 "single": dict,直接有 best_map5095 / best_round
 # 檔案格式 "list":   list of dict(每個 dict 是一個 trial),要自己取 max
 #
-# 只留 4 個模型:3 個小模型(用 hinted 當診斷組,取代 full-diagnosis)+
-# Claude Haiku 4.5(用它本來的 full-diagnosis 當診斷組,因為它沒有
-# hinted 版本)。Claude Opus 5 / Claude Sonnet 5 / Qwen3-14B / Random
-# Search baseline 都不列入,見上面 module docstring 的說明。
-# Condition 統一只用 "Diagnosis" / "Score-only" 兩種字眼。
+# 只留 4 個模型,全部統一用 hinted 當診斷組(2026-09-26:Claude Haiku 4.5
+# 補跑 --hinted 後,四個模型的診斷組 prompt 完全一致)。Claude Opus 5 /
+# Claude Sonnet 5 / Qwen3-14B / Random Search baseline 都不列入,見上面
+# module docstring 的說明。Condition 統一只用 "Diagnosis" / "Score-only"
+# 兩種字眼。
 ENTRIES = [
-    ("full_diagnosis_claude-haiku-4.5.json", "Claude Haiku 4.5", "Diagnosis", "single"),
-    ("full_diagnosis_gemma4-12b_hinted.json", "Gemma 4 12B", "Diagnosis", "single"),
-    ("full_diagnosis_llama3.1-8b_hinted.json", "Llama 3.1 8B", "Diagnosis", "single"),
-    ("full_diagnosis_phi4-14b_hinted.json", "Phi-4 14B", "Diagnosis", "single"),
+    ("full_diagnosis_claude-haiku-4.5_hinted.json", "Claude Haiku 4.5", "Diagnosis", "single"),
+    ("full_diagnosis_gemma4-12b.json", "Gemma 4 12B", "Diagnosis", "single"),
+    ("full_diagnosis_llama3.1-8b.json", "Llama 3.1 8B", "Diagnosis", "single"),
+    ("full_diagnosis_phi4-14b.json", "Phi-4 14B", "Diagnosis", "single"),
     ("score_only_claude-haiku-4.5.json", "Claude Haiku 4.5", "Score-only", "single"),
     ("score_only_gemma4-12b.json", "Gemma 4 12B", "Score-only", "single"),
     ("score_only_llama3.1-8b.json", "Llama 3.1 8B", "Score-only", "single"),

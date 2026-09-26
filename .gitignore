@@ -7,6 +7,9 @@ __pycache__/
 *.pyc
 venv/
 
+# === Claude Code 本機設定(僅本機用,不是專案內容) ===
+.claude/
+
 # === 大型/可重新產生的實驗產物 ===
 # runs/ 是每一輪訓練的權重(best.pt/last.pt)與過程圖,體積龐大且可由
 # results/*.json + src/hpo_loop.py 重新產生,不需要進版控。核心實驗結果
@@ -40,27 +43,30 @@ rep2_queue_log.txt
 remaining_queue_log.txt
 round11_queue_log.txt
 
-# === 產出物暫存資料夾(圖表 png/html,不是原始碼)===
+# === 產出物暫存資料夾(草稿/被否決的圖表版本,不是最終要交付的東西)===
+# 最終要給雪糕/放論文的圖表在 figure/ 底下(有進版控),這個資料夾是產圖
+# 過程中的草稿、被否決的版本、重複檔案,不需要進版控。
 Claude outputs/
 
 # === 之前跑過、但沒有畫在最終圖表上的模型/方法紀錄 ===
-# 最終圖表(scripts/plot_ranking_table.py、scripts/plot_trajectory.py)只
-# 比較 4 個模型:llama3.1-8b / phi4-14b / gemma4-12b(用 hinted 當診斷組)+
-# claude-haiku-4.5(用它自己的 full-diagnosis 當診斷組)。results/ 底下只
-# 保留這 4 個模型的 full_diagnosis / score_only 結果,加上
-# baseline_3seed.json(畫圖用的 baseline 值,兩支畫圖腳本都會讀)和
-# d4_d5_thresholds.json(D4/D5 診斷閾值,是所有模型共用的方法論設定,不是
-# 某一個模型的實驗紀錄,所以留著)。其餘一律忽略,包含全部
-# progress_*.json(中間存檔,最終結果已經在 full_diagnosis/score_only
-# 定案,不需要進版控)。
+# 2026-09-26 更新:Claude Haiku 4.5 補跑 --hinted 後,四個模型
+# (llama3.1-8b / phi4-14b / gemma4-12b / claude-haiku-4.5)的診斷組正式
+# 統一都用 hinted prompt(見 docs/decisions.md)。llama/phi4/gemma 三個
+# 小模型的 hinted 結果檔案名稱先前已經拿掉 "_hinted" 後綴(hinted 就是
+# 正式診斷組,不用特別標記);Claude Haiku 4.5 則反過來,新的 hinted
+# 結果檔案「保留」"_hinted" 後綴(因為它自己還有一份舊的非 hinted
+# full_diagnosis_claude-haiku-4.5.json 留著當參考,兩份要分得開)。
+# scripts/plot_trajectory.py、scripts/plot_ranking_table.py 兩支畫圖
+# script 現在就是讀下面白名單這幾個檔名,務必跟這裡保持一致,不然
+# clone 下來的人跑畫圖 script 會找不到檔案,或者接收到過期的舊數字。
 results/*.json
 !results/baseline_3seed.json
 !results/d4_d5_thresholds.json
-!results/full_diagnosis_llama3.1-8b_hinted.json
+!results/full_diagnosis_llama3.1-8b.json
 !results/score_only_llama3.1-8b.json
-!results/full_diagnosis_phi4-14b_hinted.json
+!results/full_diagnosis_phi4-14b.json
 !results/score_only_phi4-14b.json
-!results/full_diagnosis_gemma4-12b_hinted.json
+!results/full_diagnosis_gemma4-12b.json
 !results/score_only_gemma4-12b.json
-!results/full_diagnosis_claude-haiku-4.5.json
+!results/full_diagnosis_claude-haiku-4.5_hinted.json
 !results/score_only_claude-haiku-4.5.json

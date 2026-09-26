@@ -2,18 +2,51 @@
 
 LLM 讀取 YOLOv8n 訓練動態,診斷後提出下一輪超參數建議,迭代 10 輪選出最佳模型。
 
-## 專案狀態
+## 專案狀態(2026-09-26)
 
-骨架已建立,以下項目待補(見 `docs/decisions.md`):
-- [x] 用 `scripts/find_batch_size.py` 在新機器上定出 batch_size:實測49,取整為 48
-- [ ] batch_size 定案後,在新機器上重跑 3-seed baseline(舊數字是 8GB 筆電測的,不能沿用),用 `scripts/run_baseline_3seed.py`
-- [x] `src/summarize_log.py` 的 Facts / D1-D5 診斷邏輯已實作完成,`compute_class_stats()` 也接上了 per-class 資料來源(見 `src/train_runner.py`),尚未實跑驗證過
-- [ ] D4 / D5 兩個診斷閾值的具體數字(D1 已定案 0.7,見 `docs/decisions.md`)——邏輯已寫好,只差把佔位符數字換成新機器 baseline 算出來的正式值
-- [x] 關鍵點抽樣的轉折點演算法:簡單斜率變化
-- [x] `prompts/program.md` 的 Domain Knowledge 段落:保留
-- [x] 本機/開源 LLM 選型:Qwen3-14B(取代原本的 Qwen2.5-Coder-7B,理由見 `docs/decisions.md`)
+資料收集階段已完成,目前進入論文寫作階段。四個模型的完整診斷組
+(diagnosis,統一用 hinted prompt,見下方「重要:hinted 統一說明」)+
+score-only對照組都已跑完 10 輪,傳統方法基準線(novice baseline / random
+search / Optuna TPE)也都跑完,最終結果與排名已定案(見下方「目前結果」)。
 
-實驗室顯卡:NVIDIA RTX PRO 4000 Blackwell,24GB GDDR7(已確認)。系統 RAM 16GB,YOLO 訓練 `workers` 已保守鎖定為 4。
+論文用的圖表在 `figure/` 資料夾(有進版控),包含:
+- `chart.png`:4 模型 best-so-far mAP50-95 收斂曲線圖(含圖例)
+- `ranking_table_3.png`:8 列排行榜表格(4 模型 × Diagnosis/Score-only)
+- `twelve_panel_comparison_figure.png`:紅/黃/綠燈 3 場景 × baseline+3模型
+  最佳輪次的偵測結果對比圖
+- `diagnosis.png`:system prompt 結構圖(Task Description / Diagnostic
+  Information Module / Guidance Module 三大模組)
+- `fig1.png`:整體流程圖(Datasets -> Training -> Diagnosis -> LLM Guide)
+- `preview_small.jpg`:資料集樣本圖(4 張真實照片,(a)-(d) 各代表一種
+  情境,無 GT 框)
+
+## 目前結果(Diagnosis 條件,4 模型排名)
+
+| Rank | Method | Best mAP50-95 | vs. Baseline (0.6198) |
+|---|---|---|---|
+| 1 | Llama 3.1 8B | 0.66959 | ↑ 8.03% |
+| 2 | Phi-4 14B | 0.66493 | ↑ 7.28% |
+| 3 | Claude Haiku 4.5 | 0.66337 | ↑ 7.03% |
+| 4 | Gemma 4 12B | 0.65932 | ↑ 6.38% |
+
+完整 8 列(含 Score-only 對照組)數字以 `figure/ranking_table_3.png` 及
+`results/` 底下對應 json 為準,這裡只列 Diagnosis 條件方便快速參考。
+
+## 重要:hinted 統一說明
+
+2026-09-23 起,`prompts/program_hinted.md`(比主線 `program.md` 多兩段
+「Diagnostic-to-Parameter Guidance」「Exploration Guidance」提示)成為
+Llama 3.1 8B / Phi-4 14B / Gemma 4 12B 三個小模型正式的診斷組標準。
+2026-09-26,Claude Haiku 4.5 也補跑 `--hinted`,四個模型的診斷組 prompt
+現在完全一致,論文裡統一稱為「Diagnosis」,不再需要區分 hinted/non-hinted。
+
+檔名慣例(見 `.gitignore` 底部說明,務必保持一致,不然 clone 下來的人
+跑 `scripts/plot_trajectory.py` / `plot_ranking_table.py` 會找不到檔案):
+- Llama/Phi-4/Gemma:`results/full_diagnosis_<model>.json`(不帶 `_hinted`
+  後綴,因為 hinted 現在就是唯一的正式診斷組)
+- Claude Haiku 4.5:`results/full_diagnosis_claude-haiku-4.5_hinted.json`
+  (帶 `_hinted` 後綴,因為它自己還留著一份舊的非 hinted 版本
+  `full_diagnosis_claude-haiku-4.5.json` 當參考,兩份要分得開)
 
 ## 環境設定
 
@@ -27,7 +60,7 @@ LLM 讀取 YOLOv8n 訓練動態,診斷後提出下一輪超參數建議,迭代 1
 3. PyTorch 安裝:依實際 GPU 型號到 https://pytorch.org/get-started/locally/ 選對應 CUDA 版本指令,requirements.txt 裡不含 torch,要另外裝。
 4. LLM 金鑰設定:
    - Claude 系列:設定環境變數 `ANTHROPIC_API_KEY`
-   - Qwen3-14B:本機跑 Ollama(`ollama pull qwen3:14b`),見 `src/llm_agent.py`
+   - Llama 3.1 8B / Phi-4 14B / Gemma 4 12B:本機跑 Ollama,見 `src/llm_agent.py`
 5. 資料集:`datasets/` 已隨 repo 一起進版控(937 張圖片,YOLOv8 格式,來源見
    `datasets/README.roboflow.txt`:https://universe.roboflow.com/traffic-light-for-yolo/mix-dataset-9hfip ,
    CC BY 4.0),clone 下來就有,不用另外下載。`config/settings.yaml` 裡的路徑維持相對路徑,不要寫死絕對路徑。
@@ -45,25 +78,25 @@ LLM 讀取 YOLOv8n 訓練動態,診斷後提出下一輪超參數建議,迭代 1
 
 ```
 config/       設定檔(路徑、batch size 等)
-prompts/      LLM prompt 模板
+prompts/      LLM prompt 模板(program.md 主線 / program_hinted.md 現行診斷組標準)
 src/          核心程式(診斷、LLM 呼叫、訓練包裝、傳統方法基準線、主迴圈)
 experiments/  各組實驗的執行進入點
-scripts/      一次性工具腳本(例如找 batch size)
-results/      實驗結果輸出位置(9 種方法的 progress/history json,論文數據來源)
+scripts/      畫圖腳本(plot_trajectory.py / plot_ranking_table.py)+ 一次性工具腳本
+results/      實驗結果輸出位置(progress/full_diagnosis/score_only json,論文數據來源)
 docs/         決策紀錄(供論文 Method 章節引用)
-Claude outputs/  收斂曲線圖與最終成績表(PNG,供論文/簡報使用)
+figure/       論文/簡報用的最終圖表(PNG,有進版控,詳見上方「專案狀態」)
 ```
 
 以下資料夾不進版控(見 `.gitignore`),體積大且可重新產生/下載:
 `venv/`(虛擬環境)、`runs/`(每輪訓練的權重與過程圖,可由 `results/*.json` + `src/hpo_loop.py` 重新產生)、
-`weights/`、`yolov8n.pt`(可重新下載)。`datasets/` 有進版控。
+`weights/`、`yolov8n.pt`(可重新下載)、`Claude outputs/`(產圖過程中的草稿/被否決版本,不是最終交付物,最終版在 `figure/`)。`datasets/` 有進版控。
 
 ## 如何執行
 
 ```
-python scripts/find_batch_size.py          # 第一步:在新機器上定出 batch_size
-python scripts/run_baseline_3seed.py       # 第二步:batch_size定案後,跑3-seed baseline定出 mAP/雜訊門檻
+python experiments/run_full_diagnosis.py --model <model> --hinted   # 完整診斷組(見上方「hinted 統一說明」)
 python experiments/run_score_only.py       # score-only 對照組
-python experiments/run_full_diagnosis.py   # 完整診斷組(4 個 LLM)
-python experiments/run_baselines.py        # 傳統方法基準線
+python experiments/run_baselines.py        # 傳統方法基準線(novice / random search / Optuna TPE)
+python scripts/plot_trajectory.py          # 重新產生收斂曲線圖(figure/chart.png 的來源)
+python scripts/plot_ranking_table.py       # 重新產生排行榜表格(figure/ranking_table_3.png 的來源)
 ```
