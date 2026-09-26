@@ -42,11 +42,10 @@ Llama 3.1 8B / Phi-4 14B / Gemma 4 12B 三個小模型正式的診斷組標準�
 
 檔名慣例(見 `.gitignore` 底部說明,務必保持一致,不然 clone 下來的人
 跑 `scripts/plot_trajectory.py` / `plot_ranking_table.py` 會找不到檔案):
-- Llama/Phi-4/Gemma:`results/full_diagnosis_<model>.json`(不帶 `_hinted`
-  後綴,因為 hinted 現在就是唯一的正式診斷組)
-- Claude Haiku 4.5:`results/full_diagnosis_claude-haiku-4.5_hinted.json`
-  (帶 `_hinted` 後綴,因為它自己還留著一份舊的非 hinted 版本
-  `full_diagnosis_claude-haiku-4.5.json` 當參考,兩份要分得開)
+四個模型統一用 `results/full_diagnosis_<model>.json`(不帶 `_hinted`
+後綴,因為 hinted 現在就是唯一的正式診斷組)。Claude Haiku 4.5 那份舊的
+非 hinted 版本改名成 `full_diagnosis_claude-haiku-4.5_nonhinted_reference.json`,
+只留在本機當參考,不進版控。
 
 ## 環境設定
 

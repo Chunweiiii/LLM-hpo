@@ -33,6 +33,11 @@ full_diagnosis_gemma4-12b.json),因為 hinted 現在就是正式的診斷組,不
 再用檔名特別標記。ENTRIES 已同步改成新檔名。舊檔名(帶 _hinted)跟舊的
 未加 hint 版本都已經不在 git 追蹤範圍內,見 .gitignore。
 
+2026-09-26 更新:Claude Haiku 4.5 的檔名也統一拿掉 "_hinted" 後綴
+(full_diagnosis_claude-haiku-4.5_hinted.json ->
+full_diagnosis_claude-haiku-4.5.json),四個模型現在檔名慣例完全一致。
+ENTRIES 已同步改成新檔名。
+
 Baseline (5-seed) 欄位顯示 "0.6198"(四捨五入到小數點後4位),
 (↑X.XX%) 的百分比也是用這個四捨五入後的 0.6198 當分母算的 —— 這是對照
 Wayne 原本手動做的表格圖反推驗證過的寫法,不是用 baseline_3seed.json
@@ -61,7 +66,7 @@ BASELINE_VALUE = 0.6198
 # module docstring 的說明。Condition 統一只用 "Diagnosis" / "Score-only"
 # 兩種字眼。
 ENTRIES = [
-    ("full_diagnosis_claude-haiku-4.5_hinted.json", "Claude Haiku 4.5", "Diagnosis", "single"),
+    ("full_diagnosis_claude-haiku-4.5.json", "Claude Haiku 4.5", "Diagnosis", "single"),
     ("full_diagnosis_gemma4-12b.json", "Gemma 4 12B", "Diagnosis", "single"),
     ("full_diagnosis_llama3.1-8b.json", "Llama 3.1 8B", "Diagnosis", "single"),
     ("full_diagnosis_phi4-14b.json", "Phi-4 14B", "Diagnosis", "single"),

@@ -17,9 +17,15 @@ Haiku 4.5 於 2026-09-26 補跑 --hinted 後也改用 hinted 版本,四個模型
 的診斷組 prompt 完全一致,不再有 hinted/non-hinted 混用的問題)。
 Condition 也跟表格一樣簡化成 "Diagnosis" / "Score-only" 兩種字眼。
 
-2026-09-26 更新:Claude Haiku 4.5 的診斷組改成
-full_diagnosis_claude-haiku-4.5_hinted.json(best_round=7,
+2026-09-26 更新:Claude Haiku 4.5 的診斷組改成 hinted 版本(best_round=7,
 best_map5095=0.66337),取代原本的非 hinted 版本(0.667)。
+
+2026-09-26 再更新:Claude Haiku 4.5 的檔名也跟其他三個小模型統一,拿掉
+"_hinted" 後綴(full_diagnosis_claude-haiku-4.5_hinted.json ->
+full_diagnosis_claude-haiku-4.5.json),因為 hinted 現在就是四個模型
+共同、唯一的正式診斷組,不用再靠檔名區分。舊的非 hinted 版本改名成
+full_diagnosis_claude-haiku-4.5_nonhinted_reference.json 留在本機當參考,
+不進 git 版控(見 .gitignore)。
 
 顏色用 Wayne 提供的參考圖(Material Design 色票)量出來的:
     粉   #E91E63  Llama 3.1 8B(呼應參考圖裡表現最好的方法用粉紅+菱形)
@@ -55,7 +61,7 @@ MODELS = [
     ("Llama 3.1 8B", "full_diagnosis_llama3.1-8b.json", "score_only_llama3.1-8b.json", "#E91E63", "D"),
     ("Phi-4 14B", "full_diagnosis_phi4-14b.json", "score_only_phi4-14b.json", "#F57C00", "o"),
     ("Gemma 4 12B", "full_diagnosis_gemma4-12b.json", "score_only_gemma4-12b.json", "#2E7D32", "^"),
-    ("Claude Haiku 4.5", "full_diagnosis_claude-haiku-4.5_hinted.json", "score_only_claude-haiku-4.5.json", "#2196F3", "*"),
+    ("Claude Haiku 4.5", "full_diagnosis_claude-haiku-4.5.json", "score_only_claude-haiku-4.5.json", "#2196F3", "*"),
 ]
 
 GRAY = "#607D8B"
